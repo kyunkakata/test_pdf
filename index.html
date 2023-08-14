@@ -1,102 +1,80 @@
-<html>
+<!DOCTYPE html>
+<!--
+Copyright 2016 Mozilla Foundation
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html dir="ltr">
 
 <head>
-  <title>PDF Demo for Qdev</title>
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.2.228/build/pdf.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      background-color: #dfdfdf;
-      /* Grey background */
-    }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-    .center {
-      text-align: center;
-      /* center pages */
-    }
-  </style>
+  <title>24HMoney PDF Viewer</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/pdfjs-dist/web/pdf_viewer.css">
+  <link rel="stylesheet" type="text/css" href="preview.css">
+
+  <script src="https://unpkg.com/pdfjs-dist/build/pdf.js"></script>
+  <script src="https://unpkg.com/pdfjs-dist/web/pdf_viewer.js"></script>
 </head>
 
 <body>
-  <div id="pages" class="center"></div>
-  <script>
-    // download the pdf
-    var pdfTask = pdfjsLib.getDocument("https://enterprise.24hmoney.vn/generated_signed_files/1fd5c0258ac03a2402bb723367440730.pdf");
-    // parse the get params
-    var queryString = window.location.hash.split("#")[1];
-    // default params
-    var params = { pg: 1 };
-    var pagen = 0;
-    // if get params are present
-    if (queryString) {
-      // update the default settings
-      params = Object.assign(params, parseParams(queryString));
-    }
-    // Load the pages div from the DOM
-    var pages = document.getElementById("pages");
-    // handle the pdf once loaded (asyncronous)
-    pdfTask.promise.then(function (pdf) {
-      // globalize pdf
-      window.pdf = pdf;
-      // load the first page
-      loadPage(pdf, parseInt(params.pg));
-      pagen++;
-    });
-    // stores the page number of the page currently in the viewport
-    var curpage = parseInt(params.pg) + pagen;
-    // every half a second, check for scroll updates
-    setInterval(function () {
-      // if we're within 200px of the bottom of the page
-      if (document.body.scrollHeight - (window.scrollY + window.innerHeight) < 200) {
-        if (window.pdf != undefined) {
-          // load 5 more pages
-          for (var i = 0; i < 5; i++) {
-            loadPage(pdf, parseInt(params.pg) + pagen);
-            pagen++;
-          }
-        }
-      }
-      // if the page in our viewport has changed, update the url
-      if (curpage != parseInt(params.pg) + parseInt(window.scrollY /
-        (document.body.scrollHeight / pagen))) {
-        curpage = parseInt(params.pg) + parseInt(window.scrollY /
-          (document.body.scrollHeight / pagen));
-        window.location.hash = "#pg=" + curpage;
-      }
-    }, 500);
+  <header>
+    <img src="https://24hmoney.vn/_nuxt/img/logo24hmoney.d1e02c0.svg" alt="24HMoney" width="100" height="25"
+      style="margin: 10px 0 0 10px;" />
+    <h1 id="title"></h1>
+  </header>
 
-    // render `pg` from `pdf` and append it to the pages div
-    function loadPage(pdf, pg) {
-      pdf.getPage(pg).then(function (page) {
-        var viewport = page.getViewport({ scale: 0.8 });
-        var canvas = document.createElement('canvas');
-        var context = canvas.getContext('2d');
+  <div id="viewerContainer">
+    <div id="viewer" class="pdfViewer"></div>
+  </div>
 
-        canvas.id = "page-" + pg;
-        canvas.height += viewport.height;
-        canvas.width = viewport.width;
+  <div id="loadingBar">
+    <div class="progress"></div>
+    <div class="glimmer"></div>
+  </div>
 
-        pages.appendChild(canvas);
+  <div id="errorWrapper" hidden="true">
+    <div id="errorMessageLeft">
+      <span id="errorMessage"></span>
+      <button id="errorShowMore">
+        More Information
+      </button>
+      <button id="errorShowLess">
+        Less Information
+      </button>
+    </div>
+    <div id="errorMessageRight">
+      <button id="errorClose">
+        Close
+      </button>
+    </div>
+    <div class="clearBoth"></div>
+    <textarea id="errorMoreInfo" hidden="true" readonly="readonly"></textarea>
+  </div>
 
-        var renderContext = {
-          canvasContext: context,
-          viewport: viewport
-        };
-        page.render(renderContext);
-      });
-    }
+  <footer>
+    <button class="toolbarButton pageUp" title="Previous Page" id="previous"></button>
+    <button class="toolbarButton pageDown" title="Next Page" id="next"></button>
 
-    // parses get params from a query string into an object
-    function parseParams(queryString) {
-      var query = {};
-      var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&');
-      for (var i = 0; i < pairs.length; i++) {
-        var pair = pairs[i].split('=');
-        query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
-      }
-      return query;
-    }
-  </script>
+    <input type="number" id="pageNumber" class="toolbarField pageNumber" value="1" size="4" min="1">
+
+    <button class="toolbarButton zoomOut" title="Zoom Out" id="zoomOut"></button>
+    <button class="toolbarButton zoomIn" title="Zoom In" id="zoomIn"></button>
+  </footer>
+
+  <script src="preview.js"></script>
 </body>
 
 </html>
